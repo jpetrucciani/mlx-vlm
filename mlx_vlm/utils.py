@@ -993,9 +993,9 @@ def stream_generate(
     A generator producing text based on the given prompt from the model.
 
     Args:
-        prompt (mx.array): The input prompt.
         model (nn.Module): The model to use for generation.
-        max_tokens (int): The ma
+        processor (PreTrainedTokenizer): TODO
+        prompt (mx.array): The input prompt.
         kwargs: The remaining options get passed to :func:`generate_step`.
           See :func:`generate_step` for more details.
 

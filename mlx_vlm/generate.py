@@ -7,7 +7,6 @@ from .utils import (
     get_model_path,
     load,
     load_config,
-    load_image_processor,
     stream_generate,
 )
 

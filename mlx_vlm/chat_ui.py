@@ -1,11 +1,7 @@
 import argparse
-
 import gradio as gr
-
-from mlx_vlm import load
-
 from .prompt_utils import get_chat_template, get_message_json
-from .utils import load, load_config, load_image_processor, stream_generate
+from .utils import load, load_config, stream_generate
 
 
 def parse_arguments():
@@ -15,16 +11,27 @@ def parse_arguments():
     parser.add_argument(
         "--model",
         type=str,
-        default="qnguyen3/nanoLLaVA",
+        default="mlx-community/SmolVLM-Instruct-8bit",
         help="The path to the local model directory or Hugging Face repo.",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=7860,
+        help="The port to run the Gradio interface on.",
+    )
+    parser.add_argument(
+        "--address",
+        type=str,
+        default="127.0.0.1",
+        help="The address to run the Gradio interface on.",
     )
     return parser.parse_args()
 
 
 args = parse_arguments()
 config = load_config(args.model)
-model, processor = load(args.model, {"trust_remote_code": True})
-image_processor = load_image_processor(args.model)
+model, processor = load(args.model, kwargs={"trust_remote_code": True})
 
 
 def chat(message, history, temperature, max_tokens):
@@ -53,7 +60,7 @@ def chat(message, history, temperature, max_tokens):
                 )
 
             messages = get_chat_template(
-                processor, messages, add_generation_prompt=True
+                processor, messages, tokenize=False, add_generation_prompt=True
             )
 
         else:
@@ -61,13 +68,13 @@ def chat(message, history, temperature, max_tokens):
     else:
         messages = message["text"]
 
-    files = message["files"][-1]["path"]
+    files = message["files"][-1]
 
     response = ""
     for chunk in stream_generate(
-        model, processor, file, prompt, image_processor, max_tokens, temp=temperature
+        model, processor, messages, files, temp=temperature, max_tokens=max_tokens
     ):
-        response += chunk
+        response += chunk.text
         yield response
 
 
@@ -77,6 +84,7 @@ demo = gr.ChatInterface(
     additional_inputs_accordion=gr.Accordion(
         label="⚙️ Parameters", open=False, render=False
     ),
+    type="messages",
     additional_inputs=[
         gr.Slider(
             minimum=0, maximum=1, step=0.1, value=0.1, label="Temperature", render=False
@@ -90,8 +98,9 @@ demo = gr.ChatInterface(
             render=False,
         ),
     ],
+    textbox=gr.MultimodalTextbox(max_lines=60),
     description=f"Now Running {args.model}",
     multimodal=True,
 )
 
-demo.launch(inbrowser=True)
+demo.launch(inbrowser=True, server_port=args.port, server_name=args.address)
