@@ -21,10 +21,10 @@ def parse_arguments():
         help="The port to run the Gradio interface on.",
     )
     parser.add_argument(
-        "--address",
+        "--host",
         type=str,
         default="127.0.0.1",
-        help="The address to run the Gradio interface on.",
+        help="The host to run the Gradio interface on.",
     )
     return parser.parse_args()
 
@@ -98,9 +98,8 @@ demo = gr.ChatInterface(
             render=False,
         ),
     ],
-    textbox=gr.MultimodalTextbox(max_lines=60),
     description=f"Now Running {args.model}",
     multimodal=True,
 )
 
-demo.launch(inbrowser=True, server_port=args.port, server_name=args.address)
+demo.launch(inbrowser=True, server_port=args.port, server_name=args.host)
